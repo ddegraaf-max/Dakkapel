@@ -1,0 +1,72 @@
+<%- include('partials/header', { title: 'Contact' }) %>
+
+<section class="page-hero">
+  <div class="container">
+    <span class="kicker">Contact</span>
+    <h1>We denken graag met u mee.</h1>
+    <p>Vragen over de mogelijkheden bij uw woning, vergunningen of de configurator? Stuur een bericht — wij reageren binnen één werkdag.</p>
+  </div>
+</section>
+
+<section class="section" style="padding-top:20px">
+  <div class="container" style="max-width:760px">
+    <div class="config-block">
+      <div class="form-grid">
+        <div class="field"><label for="cName">Naam *</label><input type="text" id="cName" autocomplete="name" required></div>
+        <div class="field"><label for="cEmail">E-mailadres *</label><input type="email" id="cEmail" autocomplete="email" required></div>
+        <div class="field"><label for="cPhone">Telefoonnummer</label><input type="tel" id="cPhone" autocomplete="tel"></div>
+        <div class="field"><label for="cPostcode">Postcode woning</label><input type="text" id="cPostcode" autocomplete="postal-code" placeholder="1234 AB"></div>
+        <div class="field full"><label for="cMessage">Uw vraag *</label><textarea id="cMessage" rows="5" required></textarea></div>
+      </div>
+      <p class="form-note">Wij gebruiken uw gegevens uitsluitend om uw vraag te beantwoorden. Zie onze <a href="/privacy" style="text-decoration:underline">privacyverklaring</a>.</p>
+      <div style="margin-top:18px"><button class="btn btn-primary" id="submitContact">Verstuur bericht</button></div>
+      <div class="form-status" id="contactStatus"></div>
+    </div>
+    <div class="prose" style="margin-top:44px">
+      <h3>Rechtstreeks contact</h3>
+      <p>E-mail: <a href="mailto:info@creditlinedakkapellen.nl" style="text-decoration:underline">info@creditlinedakkapellen.nl</a><br>
+      Creditline B.V. · Torenlaan 5A/5B, Bussum</p>
+    </div>
+  </div>
+</section>
+
+<script>
+document.getElementById('submitContact').addEventListener('click', async function () {
+  var name = document.getElementById('cName').value.trim();
+  var email = document.getElementById('cEmail').value.trim();
+  var msg = document.getElementById('cMessage').value.trim();
+  var status = document.getElementById('contactStatus');
+  status.className = 'form-status';
+  if (!name || !email || !msg) {
+    status.textContent = 'Vul uw naam, e-mailadres en vraag in.';
+    status.classList.add('err');
+    return;
+  }
+  var btn = this;
+  btn.disabled = true; btn.textContent = 'Versturen…';
+  try {
+    var res = await fetch('/api/offerte', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: name, email: email,
+        phone: document.getElementById('cPhone').value.trim(),
+        postcode: document.getElementById('cPostcode').value.trim(),
+        message: '[CONTACTFORMULIER] ' + msg
+      })
+    });
+    var data = await res.json();
+    if (data.ok) {
+      status.textContent = 'Dank u wel! Uw bericht is verzonden — wij reageren binnen één werkdag.';
+      status.classList.add('ok');
+    } else { throw new Error(); }
+  } catch (e) {
+    status.textContent = 'Er ging iets mis. Probeer het opnieuw of mail ons direct.';
+    status.classList.add('err');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Verstuur bericht';
+  }
+});
+</script>
+
+<%- include('partials/footer') %>

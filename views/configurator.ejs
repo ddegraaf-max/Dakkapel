@@ -1,0 +1,187 @@
+<%- include('partials/header', { title: 'Configurator' }) %>
+
+<section class="page-hero">
+  <div class="container">
+    <span class="kicker">Configurator</span>
+    <h1>Stel uw dakkapel samen.</h1>
+    <p>Kies type, breedte tot 8 meter, de indeling per vak en aparte kleuren voor kozijn, draaiende delen en boeidelen — uit het volledige Drutex-kleurenpalet. De tekening en prijsindicatie rekenen live mee.</p>
+  </div>
+</section>
+
+<div class="container config-layout">
+
+  <!-- Stappen -->
+  <div class="config-steps">
+
+    <div class="config-block">
+      <h3><span class="num">01</span> Type dakkapel</h3>
+      <div class="choice-grid" data-group="type">
+        <label class="choice selected"><input type="radio" name="type" value="plat" checked>
+          <span>Plat dak<small>Meest gekozen, maximale ruimte</small></span>
+        </label>
+        <label class="choice"><input type="radio" name="type" value="aangekapt">
+          <span>Aangekapt (schuin)<small>Volgt de daklijn, klassieke uitstraling</small></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="config-block">
+      <h3><span class="num">02</span> Breedte</h3>
+      <div class="slider-row">
+        <input type="range" id="widthSlider" min="250" max="800" step="10" value="250">
+        <div class="slider-value" id="widthValue">2,50 m</div>
+      </div>
+      <p class="form-note">Van 2,50 tot 8,00 meter breed — opslag € 1.000,- per extra meter, inclusief BTW. Onze adviseur controleert bij het inmeten de beschikbare breedte van uw dakvlak.</p>
+    </div>
+
+    <div class="config-block">
+      <h3><span class="num">03</span> Hoogte</h3>
+      <div class="slider-row">
+        <input type="range" id="heightSlider" min="150" max="175" step="5" value="175">
+        <div class="slider-value" id="heightValue">1,75 m</div>
+      </div>
+      <p class="form-note">Van 1,50 tot 1,75 meter — de maximale hoogte voor vergunningsvrij plaatsen. Meerprijs € 100,- per 5 cm extra hoogte (1,75 m = + € 500,- t.o.v. 1,50 m).</p>
+    </div>
+
+    <div class="config-block">
+      <h3><span class="num">04</span> Aantal vakken</h3>
+      <div class="choice-grid" data-group="panels" style="grid-template-columns:repeat(4,1fr)">
+        <label class="choice"><input type="radio" name="panels" value="2"><span>2</span></label>
+        <label class="choice selected"><input type="radio" name="panels" value="3" checked><span>3</span></label>
+        <label class="choice"><input type="radio" name="panels" value="4"><span>4</span></label>
+        <label class="choice"><input type="radio" name="panels" value="5"><span>5</span></label>
+        <label class="choice"><input type="radio" name="panels" value="6"><span>6</span></label>
+        <label class="choice"><input type="radio" name="panels" value="7"><span>7</span></label>
+        <label class="choice"><input type="radio" name="panels" value="8"><span>8</span></label>
+      </div>
+    </div>
+
+    <div class="config-block">
+      <h3><span class="num">05</span> Indeling per vak</h3>
+      <p class="form-note" style="margin:0 0 14px">Stel elk vak apart in: vast glas of draaikiep met MACO MULTI-MATIC beslag, scharnieren links of rechts. Per vak kunt u ook een ventilatierooster (suskast) toevoegen à € 65 per stuk, incl. BTW.</p>
+      <div id="vakList" class="vak-list"></div>
+    </div>
+
+    <div class="config-block">
+      <h3><span class="num">06</span> Materiaal boeidelen</h3>
+      <div class="choice-grid" data-group="material">
+        <label class="choice selected"><input type="radio" name="material" value="kunststof" checked>
+          <span>Kunststof<small>Onderhoudsarm, meest gekozen</small></span>
+        </label>
+        <label class="choice"><input type="radio" name="material" value="hout">
+          <span>Hout<small>Traditioneel, geschikt bij welstand</small></span><span class="opt-price">+14%</span>
+        </label>
+        <label class="choice"><input type="radio" name="material" value="zink">
+          <span>Zinklook<small>Moderne, strakke uitstraling</small></span><span class="opt-price">+22%</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="config-block">
+      <h3><span class="num">07</span> Materiaal zijwangen</h3>
+      <div class="choice-grid" data-group="sideMaterial">
+        <label class="choice selected"><input type="radio" name="sideMaterial" value="kunststof-rabat" checked>
+          <span>Kunststof rabatdelen<small>Onderhoudsarm, meest gekozen</small></span>
+        </label>
+        <label class="choice"><input type="radio" name="sideMaterial" value="hout-rabat">
+          <span>Houten rabatdelen<small>Traditionele uitstraling</small></span>
+        </label>
+        <label class="choice"><input type="radio" name="sideMaterial" value="zink">
+          <span>Zinklook<small>Strak, met staande felsnaden</small></span>
+        </label>
+        <label class="choice"><input type="radio" name="sideMaterial" value="plaat">
+          <span>Vlak plaatmateriaal<small>Modern en minimalistisch</small></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="config-block">
+      <h3><span class="num">08</span> Kleur kozijn</h3>
+      <p class="form-note" style="margin:0 0 12px">Drutex decorfolies — effen kleuren en houtlooks. Gekozen: <strong id="colorFrameGridLabel">Wit (RAL 9016)</strong></p>
+      <div id="colorFrameGrid" class="color-grid"></div>
+    </div>
+
+    <div class="config-block">
+      <h3><span class="num">09</span> Kleur draaiende delen</h3>
+      <p class="form-note" style="margin:0 0 12px">De ramen die open kunnen — mag afwijken van het kozijn. Gekozen: <strong id="colorSashGridLabel">Wit (RAL 9016)</strong></p>
+      <div id="colorSashGrid" class="color-grid"></div>
+    </div>
+
+    <div class="config-block">
+      <h3><span class="num">10</span> Kleur boeidelen</h3>
+      <p class="form-note" style="margin:0 0 12px">Het boeiboord en de randafwerking. Gekozen: <strong id="colorBoeiGridLabel">Wit (RAL 9016)</strong></p>
+      <div id="colorBoeiGrid" class="color-grid"></div>
+    </div>
+
+    <div class="config-block">
+      <h3><span class="num">11</span> Kleur zijwangen</h3>
+      <p class="form-note" style="margin:0 0 12px">Rabatdelen of plaatmateriaal in kleur — antraciet houtnerf is de meest gekozen combinatie. Gekozen: <strong id="colorSideGridLabel">Antraciet houtnerf (7016)</strong></p>
+      <div id="colorSideGrid" class="color-grid"></div>
+    </div>
+
+    <div class="config-block">
+      <h3><span class="num">12</span> Opties</h3>
+      <div class="choice-grid" data-group="options">
+        <label class="choice"><input type="checkbox" name="options" value="triple">
+          <span>Triple glas HR+++<small>Extra isolatie &amp; comfort, incl. BTW</small></span><span class="opt-price">+ € 75 per vak</span>
+        </label>
+        <label class="choice"><input type="checkbox" name="options" value="rc2">
+          <span>RC2 inbraakwerend<small>Beslag met antiverwijderpennen</small></span><span class="opt-price">+ € 425</span>
+        </label>
+        <label class="choice"><input type="checkbox" name="options" value="screens">
+          <span>Elektrische screens<small>Zonwering buitenzijde — prijs volgt in de offerte</small></span><span class="opt-price">meerprijs</span>
+        </label>
+        <label class="choice"><input type="checkbox" name="options" value="rolluiken">
+          <span>Elektrische rolluiken<small>Verduistering &amp; isolatie — prijs volgt in de offerte</small></span><span class="opt-price">meerprijs</span>
+        </label>
+        <label class="choice"><input type="checkbox" name="options" value="roedes">
+          <span>Roedes (sprossen)<small>In de foliekleur van uw kozijn</small></span><span class="opt-price">+ € 395</span>
+        </label>
+        <label class="choice"><input type="checkbox" name="options" value="afwerking">
+          <span>Binnenafwerking<small>Gipsplaat, stuc- en schilderwerk binnen</small></span><span class="opt-price">meerprijs</span>
+        </label>
+        <label class="choice"><input type="checkbox" name="options" value="vergunning">
+          <span>Vergunningsaanvraag<small>Wij verzorgen de complete omgevingsvergunning</small></span><span class="opt-price">meerprijs</span>
+        </label>
+        <label class="choice"><input type="checkbox" name="options" value="horren">
+          <span>Inzethorren<small>Alleen op draaikiepramen, incl. BTW — zichtbaar in de tekening</small></span><span class="opt-price">+ € 65 p/st</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="config-block" id="offerte">
+      <h3><span class="num">13</span> Vrijblijvende offerte aanvragen</h3>
+      <div class="form-grid">
+        <div class="field"><label for="fName">Naam *</label><input type="text" id="fName" autocomplete="name" required></div>
+        <div class="field"><label for="fEmail">E-mailadres *</label><input type="email" id="fEmail" autocomplete="email" required></div>
+        <div class="field"><label for="fPhone">Telefoonnummer</label><input type="tel" id="fPhone" autocomplete="tel"></div>
+        <div class="field"><label for="fPostcode">Postcode woning</label><input type="text" id="fPostcode" autocomplete="postal-code" placeholder="1234 AB"></div>
+        <div class="field full"><label for="fMessage">Opmerkingen</label><textarea id="fMessage" rows="3" placeholder="Bijv. gewenste periode, bijzonderheden van het dak…"></textarea></div>
+      </div>
+      <p class="form-note">Uw complete configuratie — inclusief vakindeling en kleurkeuzes — wordt automatisch meegestuurd. Wij nemen binnen één werkdag contact op. Zie onze <a href="/privacy" style="text-decoration:underline">privacyverklaring</a>.</p>
+      <div style="margin-top:18px">
+        <button class="btn btn-primary" id="submitOfferte">Offerte aanvragen</button>
+      </div>
+      <div class="form-status" id="formStatus"></div>
+    </div>
+  </div>
+
+  <!-- Live preview -->
+  <aside class="config-preview">
+    <svg id="previewSvg" viewBox="0 0 480 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Live tekening van uw dakkapel"></svg>
+    <div class="preview-meta">
+      <div>
+        <div class="dim" id="dimLine">2,50 m × 1,75 m · 3 vakken</div>
+        <div class="dim" id="dimLine2">Plat dak · Kunststof · kozijn Wit</div>
+      </div>
+      <div class="preview-price">
+        <div class="p-label">Prijsindicatie</div>
+        <div class="p-value" id="priceValue">€ 7.450</div>
+        <div class="p-sub">casco · incl. BTW, lift en container</div>
+      </div>
+    </div>
+  </aside>
+
+</div>
+
+<%- include('partials/footer') %>

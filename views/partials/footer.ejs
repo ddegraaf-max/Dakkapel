@@ -1,0 +1,41 @@
+</main>
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div class="footer-col footer-brand-col">
+      <div class="brand footer-brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M4 18 L16 6 L28 18" stroke="var(--accent)" stroke-width="3.5" fill="none" stroke-linecap="round"/><rect x="11" y="12.5" width="10" height="7.5" fill="currentColor"/></svg>
+        <span class="brand-name">Creditline<em>Dakkapellen</em></span>
+      </div>
+      <p>Dakkapellen op maat, vakkundig ter plaatse gebouwd. Van eerste schets tot laatste kitrand.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Navigatie</h4>
+      <a href="/configurator">Configurator</a>
+      <a href="/modellen">Modellen</a>
+      <a href="/dakkapellen">Dakkapellen</a>
+      <a href="/werkwijze">Werkwijze</a>
+      <a href="/over-ons">Over ons</a>
+      <a href="/contact">Contact</a>
+    </div>
+    <div class="footer-col">
+      <h4>Juridisch</h4>
+      <a href="/privacy">Privacyverklaring</a>
+      <a href="/voorwaarden">Algemene voorwaarden</a>
+    </div>
+    <div class="footer-col">
+      <h4>Contact</h4>
+      <p>Torenlaan 5A/5B<br>1402 AT Bussum</p>
+      <p><a href="mailto:info@creditlinedakkapellen.nl">info@creditlinedakkapellen.nl</a></p>
+      <p class="footer-legal">Creditline B.V.<br>KvK 59683198 · BTW NL853603108B01</p>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <span>&copy; <%= new Date().getFullYear() %> CreditlineDakkapellen.nl — Creditline B.V.</span>
+    <span>10 jaar garantie · Ter plaatse gebouwd · Vaste prijs</span>
+  </div>
+</footer>
+<script src="/js/main.js"></script>
+<% if (page === 'configurator') { %><script src="/js/configurator.js"></script><% } %>
+<% if (page === 'home' || page === 'werkwijze') { %><script src="/js/bouwanimatie.js"></script><% } %>
+</body>
+</html>

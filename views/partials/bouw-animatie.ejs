@@ -1,0 +1,92 @@
+<section class="section" id="bouwanimatie">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker">Zo bouwen wij</span>
+      <h2>Ter plaatse gebouwd, geen fabriekswerk.</h2>
+      <p>Wij hijsen geen kant-en-klare doos op uw dak. Onze vakmensen maken de opening en bouwen uw dakkapel ter plaatse op — millimeter-nauwkeurig passend op úw woning.</p>
+    </div>
+    <div class="anim-wrap reveal">
+      <svg id="buildAnim" viewBox="0 0 640 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animatie: dakkapel wordt ter plaatse op het dak gebouwd">
+        <defs>
+          <linearGradient id="ba-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dce9f2"/><stop offset="1" stop-color="#f4efe6"/></linearGradient>
+          <linearGradient id="ba-roof" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b4038"/><stop offset="1" stop-color="#7a564a"/></linearGradient>
+          <pattern id="ba-tiles" width="26" height="14" patternUnits="userSpaceOnUse">
+            <path d="M0 14 Q6.5 8 13 14 T26 14" stroke="rgba(0,0,0,.18)" fill="none"/>
+          </pattern>
+        </defs>
+        <rect width="640" height="400" fill="url(#ba-sky)"/>
+        <circle cx="552" cy="62" r="30" fill="#f2c98c" opacity=".85"/>
+
+        <!-- woning -->
+        <rect x="140" y="238" width="360" height="130" fill="#e9e2d4" stroke="#22272b" stroke-width="3"/>
+        <polygon points="118,238 320,100 522,238" fill="url(#ba-roof)" stroke="#22272b" stroke-width="3"/>
+        <polygon points="118,238 320,100 522,238" fill="url(#ba-tiles)"/>
+        <rect x="188" y="272" width="52" height="60" fill="#bcd7e8" stroke="#22272b" stroke-width="3"/>
+        <rect x="398" y="272" width="52" height="60" fill="#bcd7e8" stroke="#22272b" stroke-width="3"/>
+        <rect x="298" y="280" width="44" height="88" fill="#c4502e" stroke="#22272b" stroke-width="3"/>
+        <circle cx="332" cy="326" r="3" fill="#22272b"/>
+        <rect x="0" y="366" width="640" height="34" fill="#9fb48a"/>
+
+        <!-- fase 1: opening in het dak -->
+        <g class="ph ph1">
+          <rect x="248" y="152" width="144" height="72" fill="#2b2119" stroke="#22272b" stroke-width="2.5"/>
+          <line x1="256" y1="160" x2="384" y2="216" stroke="rgba(255,255,255,.08)" stroke-width="2"/>
+          <line x1="384" y1="160" x2="256" y2="216" stroke="rgba(255,255,255,.08)" stroke-width="2"/>
+        </g>
+
+        <!-- losse dakpannen naast de opening (alleen tijdens de bouw) -->
+        <g class="ph phTegels">
+          <rect x="404" y="196" width="26" height="12" rx="2" fill="#7a564a" stroke="#22272b" stroke-width="1.5" transform="rotate(8 417 202)"/>
+          <rect x="412" y="212" width="26" height="12" rx="2" fill="#6a4b40" stroke="#22272b" stroke-width="1.5" transform="rotate(-6 425 218)"/>
+        </g>
+
+        <!-- fase 2: constructie (balken en stijlen) -->
+        <g class="ph ph2">
+          <rect x="250" y="152" width="7" height="72" fill="#c9a06a" stroke="#22272b" stroke-width="1.5"/>
+          <rect x="296" y="152" width="7" height="72" fill="#c9a06a" stroke="#22272b" stroke-width="1.5"/>
+          <rect x="340" y="152" width="7" height="72" fill="#c9a06a" stroke="#22272b" stroke-width="1.5"/>
+          <rect x="384" y="152" width="7" height="72" fill="#c9a06a" stroke="#22272b" stroke-width="1.5"/>
+          <rect x="246" y="146" width="149" height="8" fill="#b8905c" stroke="#22272b" stroke-width="1.5"/>
+          <rect x="246" y="218" width="149" height="8" fill="#b8905c" stroke="#22272b" stroke-width="1.5"/>
+        </g>
+
+        <!-- fase 3: zijwangen + kozijn + glas -->
+        <g class="ph ph3">
+          <polygon points="248,158 236,224 248,224" fill="#cfc7b8" stroke="#22272b" stroke-width="2"/>
+          <polygon points="392,158 404,224 392,224" fill="#cfc7b8" stroke="#22272b" stroke-width="2"/>
+          <rect x="248" y="152" width="144" height="72" fill="#f5f5f2" stroke="#22272b" stroke-width="3"/>
+          <rect x="258" y="160" width="36" height="54" fill="#bcd7e8" stroke="#e6e6e1" stroke-width="4"/>
+          <rect x="302" y="160" width="36" height="54" fill="#bcd7e8" stroke="#e6e6e1" stroke-width="4"/>
+          <rect x="346" y="160" width="36" height="54" fill="#bcd7e8" stroke="#e6e6e1" stroke-width="4"/>
+        </g>
+
+        <!-- fase 4: dak (bitumen) + boeidelen + dorpel -->
+        <g class="ph ph4">
+          <rect x="240" y="138" width="160" height="12" rx="4" fill="#3a4045" stroke="#22272b" stroke-width="2.5"/>
+          <line x1="246" y1="141" x2="394" y2="141" stroke="rgba(255,255,255,.35)" stroke-width="1.5"/>
+          <polygon points="248,224 238,238 402,238 392,224" fill="#d9d2c3" stroke="#22272b" stroke-width="2.5"/>
+        </g>
+
+        <!-- gereedschap/steiger-hints (zichtbaar tijdens de bouwfases) -->
+        <g class="ph phTools">
+          <line x1="452" y1="366" x2="500" y2="234" stroke="#8a6f52" stroke-width="6" stroke-linecap="round"/>
+          <line x1="470" y1="366" x2="518" y2="234" stroke="#8a6f52" stroke-width="6" stroke-linecap="round"/>
+          <line x1="459" y1="340" x2="507" y2="340" stroke="#8a6f52" stroke-width="4"/>
+          <line x1="466" y1="312" x2="512" y2="312" stroke="#8a6f52" stroke-width="4"/>
+          <line x1="473" y1="284" x2="517" y2="284" stroke="#8a6f52" stroke-width="4"/>
+          <line x1="480" y1="256" x2="522" y2="256" stroke="#8a6f52" stroke-width="4"/>
+        </g>
+
+        <!-- vinkje bij oplevering -->
+        <g class="ph ph5">
+          <circle cx="540" cy="150" r="26" fill="#2e7d4f"/>
+          <path d="M528 150 l8 9 l16 -18" stroke="#fff" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+      </svg>
+      <div class="anim-bar">
+        <div class="anim-caption" id="animCaption">Uw woning — nog zonder dakkapel</div>
+        <div class="anim-dots" id="animDots" aria-hidden="true"></div>
+      </div>
+    </div>
+  </div>
+</section>
