@@ -79,12 +79,13 @@ function calculatePrice(config) {
   vakken.forEach(v => {
     const mode = typeof v === 'string' ? v : (v && v.mode);
     const rooster = typeof v === 'object' && v && v.rooster;
-    if (mode && mode !== 'vast') dkCount++;
+    if (mode === 'dk-links' || mode === 'dk-rechts') dkCount++;
     if (rooster) price += PRICING.roosterPerVak;
   });
   const opts = Array.isArray(config.options) ? config.options : [];
   if (opts.includes('horren')) price += dkCount * PRICING.horPerStuk;
-  if (opts.includes('triple')) price += vakken.length * PRICING.triplePerVak;
+  const glasVakken = vakken.filter(v => (typeof v === 'string' ? v : (v && v.mode)) !== 'paneel').length;
+  if (opts.includes('triple')) price += glasVakken * PRICING.triplePerVak;
   let optionsTotal = 0;
   opts.forEach(o => { if (PRICING.options[o]) optionsTotal += PRICING.options[o].price; });
   return Math.round((price + optionsTotal) / 5) * 5;
@@ -165,12 +166,13 @@ app.post('/api/offerte', async (req, res) => {
       }).join(', ')
     : '—';
 
-  const VAK_LABELS = { 'vast': 'vast glas', 'dk-links': 'draaikiep (scharnieren links)', 'dk-rechts': 'draaikiep (scharnieren rechts)' };
+  const VAK_LABELS = { 'vast': 'vast glas', 'dk-links': 'draaikiep (scharnieren links)', 'dk-rechts': 'draaikiep (scharnieren rechts)', 'paneel': 'dicht paneel' };
   const vakkenTekst = (config && Array.isArray(config.vakken))
     ? config.vakken.map((v, i) => {
         const mode = typeof v === 'string' ? v : (v && v.mode);
         const rooster = typeof v === 'object' && v && v.rooster;
-        return `Vak ${i + 1}: ${VAK_LABELS[mode] || mode}${rooster ? ' + ventilatierooster' : ''}`;
+        const breedte = (typeof v === 'object' && v && v.paneelBreedte) ? ` (${v.paneelBreedte} cm)` : '';
+        return `Vak ${i + 1}: ${VAK_LABELS[mode] || mode}${mode === 'paneel' ? breedte : ''}${rooster ? ' + ventilatierooster' : ''}`;
       }).join(' · ')
     : '—';
   const kleur = id => (PRICING.colors[id] ? PRICING.colors[id].label : (id || '—'));
@@ -187,6 +189,7 @@ app.post('/api/offerte', async (req, res) => {
       <tr><td style="padding:6px 14px 6px 0;color:#777">Kleur boeidelen</td><td><strong>${kleur(config.colorBoei)}</strong></td></tr>
       <tr><td style="padding:6px 14px 6px 0;color:#777">Materiaal zijwangen</td><td><strong>${SIDE_LABELS[config.sideMaterial] || config.sideMaterial || '—'}</strong></td></tr>
       <tr><td style="padding:6px 14px 6px 0;color:#777">Kleur zijwangen</td><td><strong>${kleur(config.colorSide)}</strong></td></tr>
+      ${(config.vakken || []).some(v => typeof v === 'object' && v && v.mode === 'paneel') ? `<tr><td style="padding:6px 14px 6px 0;color:#777">Kleur panelen</td><td><strong>${kleur(config.colorPaneel)}</strong></td></tr>` : ''}
       <tr><td style="padding:6px 14px 6px 0;color:#777">Opties</td><td><strong>${optLabels || 'Geen'}</strong></td></tr>
       <tr><td style="padding:6px 14px 6px 0;color:#777">Prijsindicatie</td><td><strong>€ ${price ? price.toLocaleString('nl-NL') : '—'} incl. BTW &amp; montage</strong></td></tr>
     </table>` : '<p>Geen configuratie meegestuurd.</p>';

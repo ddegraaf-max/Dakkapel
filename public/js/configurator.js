@@ -41,6 +41,7 @@
     colorBoei: 'wit',           // boeidelen
     sideMaterial: 'kunststof-rabat',  // zijwangen: kunststof-rabat | hout-rabat | zink | plaat
     colorSide: 'antraciet-hn',  // kleur zijwangen
+    colorPaneel: 'antraciet-hn', // kleur dichte panelen
     vakken: [
       { mode: 'dk-links', rooster: false },
       { mode: 'dk-rechts', rooster: false },
@@ -67,7 +68,7 @@
   const MATERIAL_LABELS = { kunststof: 'Kunststof', hout: 'Hout', zink: 'Zinklook' };
   const SIDE_LABELS = { 'kunststof-rabat': 'Kunststof rabatdelen', 'hout-rabat': 'Houten rabatdelen', 'zink': 'Zinklook', 'plaat': 'Vlak plaatmateriaal' };
   const TYPE_LABELS = { plat: 'Plat dak', aangekapt: 'Aangekapt' };
-  const VAK_LABELS = { 'vast': 'Vast glas', 'dk-links': 'Draaikiep · scharnieren links', 'dk-rechts': 'Draaikiep · scharnieren rechts' };
+  const VAK_LABELS = { 'vast': 'Vast glas', 'dk-links': 'Draaikiep · scharnieren links', 'dk-rechts': 'Draaikiep · scharnieren rechts', 'paneel': 'Dicht paneel in kleur' };
 
   const svg = document.getElementById('previewSvg');
   const priceEl = document.getElementById('priceValue');
@@ -93,7 +94,8 @@
       if (v.rooster) p += PRICING.roosterPerVak;
     });
     if (state.options.includes('horren')) p += dk * PRICING.horPerStuk;
-    if (state.options.includes('triple')) p += state.vakken.length * PRICING.triplePerVak;
+    const glasVakken = state.vakken.filter(v => v.mode !== 'paneel').length;
+    if (state.options.includes('triple')) p += glasVakken * PRICING.triplePerVak;
     state.options.forEach(o => { p += PRICING.options[o] || 0; });
     return Math.round(p / 5) * 5;
   }
@@ -158,17 +160,35 @@
     // kozijnkader (kozijnkleur)
     s += `<rect x="${x0}" y="${topY + 4}" width="${dw}" height="${dh}" fill="${frameC.hex}" stroke="#22272b" stroke-width="3"/>`;
 
-    // glasvakken
+    // vakken: panelen krijgen hun eigen breedte, glasvakken delen de rest
     const pad = 7, gap = 6;
     const n = state.vakken.length;
     const innerW = dw - pad * 2;
-    const paneW = (innerW - gap * (n - 1)) / n;
     const gy = topY + 12, gh = dh - 20;
+    const paneelC = byId(state.colorPaneel);
+
+    let paneelPxTotaal = 0, glasCount = 0;
+    state.vakken.forEach(v => {
+      if (v.mode === 'paneel') paneelPxTotaal += Math.max(20, (v.paneelBreedte || 60)) * scale;
+      else glasCount++;
+    });
+    const beschikbaar = innerW - gap * (n - 1) - paneelPxTotaal;
+    const glasW = glasCount > 0 ? Math.max(18, beschikbaar / glasCount) : 0;
 
     const horOn = state.options.includes('horren');
+    let px = x0 + pad;
     state.vakken.forEach((vakObj, i) => {
       const vak = vakObj.mode;
-      const px = x0 + pad + i * (paneW + gap);
+      const paneW = vak === 'paneel' ? Math.max(20, (vakObj.paneelBreedte || 60)) * scale : glasW;
+      if (vak === 'paneel') {
+        // dicht paneel in kleur
+        s += `<rect x="${px}" y="${gy}" width="${paneW}" height="${gh}" fill="${paneelC.hex}" stroke="${frameC.frame}" stroke-width="3"/>`;
+        s += `<line x1="${px + 3}" y1="${gy + 5}" x2="${px + 3}" y2="${gy + gh - 5}" stroke="rgba(255,255,255,.18)" stroke-width="1.5"/>`;
+        s += `<line x1="${px + paneW - 3}" y1="${gy + 5}" x2="${px + paneW - 3}" y2="${gy + gh - 5}" stroke="rgba(0,0,0,.18)" stroke-width="1.5"/>`;
+        s += `<text x="${px + paneW / 2}" y="${gy + gh - 4}" text-anchor="middle" font-family="Instrument Sans, sans-serif" font-size="10" font-weight="600" fill="rgba(255,255,255,.6)">${i + 1}</text>`;
+        px += paneW + gap;
+        return;
+      }
       const sashColor = vak === 'vast' ? frameC.frame : sashC.hex;
       const sashStroke = vak === 'vast' ? 3 : 5;
       s += `<rect x="${px}" y="${gy}" width="${paneW}" height="${gh}" fill="#bcd7e8" stroke="${sashColor}" stroke-width="${sashStroke}"/>`;
@@ -207,6 +227,7 @@
         s += `<line x1="${px}" y1="${gy + gh / 2}" x2="${px + paneW}" y2="${gy + gh / 2}" stroke="${sashColor}" stroke-width="2.5"/>`;
         s += `<line x1="${mx}" y1="${gy}" x2="${mx}" y2="${gy + gh}" stroke="${sashColor}" stroke-width="2.5"/>`;
       }
+      px += paneW + gap;
     });
 
     // screens/rolluiken-kast
@@ -282,7 +303,7 @@
       row.innerHTML = `<span class="vak-num">Vak ${i + 1}</span>`;
       const opts = document.createElement('div');
       opts.className = 'vak-opts';
-      [['vast', 'Vast'], ['dk-links', 'Draaikiep ⟵'], ['dk-rechts', 'Draaikiep ⟶']].forEach(([val, label]) => {
+      [['vast', 'Vast'], ['dk-links', 'Draaikiep ⟵'], ['dk-rechts', 'Draaikiep ⟶'], ['paneel', 'Paneel']].forEach(([val, label]) => {
         const b = document.createElement('button');
         b.type = 'button';
         b.className = 'vak-btn' + (vakObj.mode === val ? ' selected' : '');
@@ -290,24 +311,48 @@
         b.title = VAK_LABELS[val];
         b.addEventListener('click', () => {
           state.vakken[i].mode = val;
-          opts.querySelectorAll('.vak-btn').forEach(x => x.classList.remove('selected'));
-          b.classList.add('selected');
+          if (val === 'paneel') {
+            state.vakken[i].rooster = false;
+            if (!state.vakken[i].paneelBreedte) state.vakken[i].paneelBreedte = 60;
+          }
+          buildVakList();   // rij opnieuw opbouwen (breedte-invoer tonen/verbergen)
           update();
         });
         opts.appendChild(b);
       });
-      // ventilatierooster-toggle per vak (+ € 65)
-      const vr = document.createElement('button');
-      vr.type = 'button';
-      vr.className = 'vak-btn vak-rooster' + (vakObj.rooster ? ' selected' : '');
-      vr.innerHTML = 'Rooster <span class="vak-price">+ € 65</span>';
-      vr.title = 'Ventilatierooster (suskast) in dit vak — € 65 per stuk';
-      vr.addEventListener('click', () => {
-        state.vakken[i].rooster = !state.vakken[i].rooster;
-        vr.classList.toggle('selected', state.vakken[i].rooster);
-        update();
-      });
-      opts.appendChild(vr);
+      if (vakObj.mode === 'paneel') {
+        // breedte-invoer voor het paneel (cm)
+        const wrap = document.createElement('span');
+        wrap.className = 'paneel-breedte';
+        wrap.innerHTML = '<label>breedte</label>';
+        const inp = document.createElement('input');
+        inp.type = 'number';
+        inp.min = 20; inp.max = 300; inp.step = 5;
+        inp.value = vakObj.paneelBreedte || 60;
+        inp.addEventListener('input', () => {
+          const v = Math.min(300, Math.max(20, parseInt(inp.value, 10) || 60));
+          state.vakken[i].paneelBreedte = v;
+          update();
+        });
+        const cm = document.createElement('span');
+        cm.textContent = 'cm';
+        wrap.appendChild(inp);
+        wrap.appendChild(cm);
+        opts.appendChild(wrap);
+      } else {
+        // ventilatierooster-toggle per vak (+ € 65) — niet bij een dicht paneel
+        const vr = document.createElement('button');
+        vr.type = 'button';
+        vr.className = 'vak-btn vak-rooster' + (vakObj.rooster ? ' selected' : '');
+        vr.innerHTML = 'Rooster <span class="vak-price">+ € 65</span>';
+        vr.title = 'Ventilatierooster (suskast) in dit vak — € 65 per stuk';
+        vr.addEventListener('click', () => {
+          state.vakken[i].rooster = !state.vakken[i].rooster;
+          vr.classList.toggle('selected', state.vakken[i].rooster);
+          update();
+        });
+        opts.appendChild(vr);
+      }
       row.appendChild(opts);
       vakList.appendChild(row);
     });
@@ -317,9 +362,12 @@
   function update() {
     draw();
     priceEl.textContent = fmt(calcPrice());
-    const dk = state.vakken.filter(v => v.mode !== 'vast').length;
+    const dk = state.vakken.filter(v => v.mode === 'dk-links' || v.mode === 'dk-rechts').length;
+    const pn = state.vakken.filter(v => v.mode === 'paneel').length;
+    const paneelWrap = document.getElementById('paneelKleurWrap');
+    if (paneelWrap) paneelWrap.style.display = pn > 0 ? '' : 'none';
     const vr = state.vakken.filter(v => v.rooster).length;
-    dimLine.textContent = `${fmtM(state.width)} × ${fmtM(state.height)} · ${state.vakken.length} vakken (${dk}× draaikiep${vr ? ', ' + vr + '× rooster' : ''})`;
+    dimLine.textContent = `${fmtM(state.width)} × ${fmtM(state.height)} · ${state.vakken.length} vakken (${dk}× draaikiep${pn ? ', ' + pn + '× paneel' : ''}${vr ? ', ' + vr + '× rooster' : ''})`;
     dimLine2.textContent = `${TYPE_LABELS[state.type]} · ${MATERIAL_LABELS[state.material]} · kozijn ${byId(state.colorFrame).label.split(' (')[0]}`;
     const pct = ((state.width - slider.min) / (slider.max - slider.min)) * 100;
     slider.style.setProperty('--fill', pct + '%');
@@ -417,6 +465,7 @@
   buildColorGrid('colorSashGrid', 'colorSash');
   buildColorGrid('colorBoeiGrid', 'colorBoei');
   buildColorGrid('colorSideGrid', 'colorSide');
+  buildColorGrid('colorPaneelGrid', 'colorPaneel');
   buildVakList();
   if (hSlider) {
     const pct = ((state.height - hSlider.min) / (hSlider.max - hSlider.min)) * 100;

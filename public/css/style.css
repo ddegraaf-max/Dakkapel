@@ -401,3 +401,12 @@ input[type="range"]::-moz-range-thumb {
 .verg-card li::before { content: ''; position: absolute; left: 4px; top: .55em; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
 .verg-note { margin-top: 18px; padding: 14px 16px; background: var(--accent-soft); border-radius: 12px; font-size: .92rem; color: var(--accent-deep); font-weight: 500; }
 @media (max-width: 980px) { .verg-grid { grid-template-columns: 1fr; } }
+
+/* paneel-breedte invoer in de vakrij */
+.paneel-breedte { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; font-size: .84rem; color: var(--ink-soft); }
+.paneel-breedte label { font-weight: 600; }
+.paneel-breedte input {
+  width: 66px; padding: 6px 8px; border: 1.5px solid var(--line); border-radius: 8px;
+  font-family: var(--font-body); font-size: .9rem; background: var(--white); color: var(--ink); text-align: right;
+}
+.paneel-breedte input:focus { outline: none; border-color: var(--accent); }
