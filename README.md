@@ -1,4 +1,4 @@
-# CreditlineDakkapellen.nl
+# MaatwerkDakkapel
 
 Dakkapellen-website met live configurator. Node.js / Express / EJS — Railway-ready.
 
@@ -17,8 +17,8 @@ Site draait op http://localhost:3000
 | Variabele        | Doel                                            |
 |------------------|--------------------------------------------------|
 | `RESEND_API_KEY` | Resend API-key voor offerte-mails               |
-| `MAIL_FROM`      | Afzender, bijv. `CreditlineDakkapellen.nl <offerte@creditlinedakkapellen.nl>` (domein geverifieerd in Resend) |
-| `MAIL_TO`        | Ontvanger van aanvragen, bijv. `info@creditlinedakkapellen.nl` |
+| `MAIL_FROM`      | Afzender, bijv. `MaatwerkDakkapel <offerte@maatwerkdakkapel.nl>` (domein geverifieerd in Resend) |
+| `MAIL_TO`        | Ontvanger van aanvragen, bijv. `info@maatwerkdakkapel.nl` |
 
 Zonder `RESEND_API_KEY` worden aanvragen in de Railway-logs gelogd (niets gaat verloren).
 

@@ -1,5 +1,5 @@
 // ============================================================
-// CreditlineDakkapellen.nl — server.js
+// MaatwerkDakkapel — server.js
 // Creditline B.V. | Node.js / Express / EJS | Railway-ready
 // ============================================================
 const express = require('express');
@@ -196,7 +196,7 @@ app.post('/api/offerte', async (req, res) => {
 
   const html = `
     <div style="font-family:Arial,sans-serif;max-width:640px">
-      <h2 style="color:#22272b">Nieuwe offerte-aanvraag — CreditlineDakkapellen.nl</h2>
+      <h2 style="color:#22272b">Nieuwe offerte-aanvraag — MaatwerkDakkapel</h2>
       <p><strong>Naam:</strong> ${name}<br>
          <strong>E-mail:</strong> ${email}<br>
          <strong>Telefoon:</strong> ${phone || '—'}<br>
@@ -211,8 +211,8 @@ app.post('/api/offerte', async (req, res) => {
       const { Resend } = require('resend');
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails.send({
-        from: process.env.MAIL_FROM || 'CreditlineDakkapellen.nl <onboarding@resend.dev>',
-        to: process.env.MAIL_TO || 'info@creditlinedakkapellen.nl',
+        from: process.env.MAIL_FROM || 'MaatwerkDakkapel <onboarding@resend.dev>',
+        to: process.env.MAIL_TO || 'info@maatwerkdakkapel.nl',
         reply_to: email,
         subject: `Offerte-aanvraag dakkapel — ${name}${price ? ' — € ' + price.toLocaleString('nl-NL') : ''}`,
         html
@@ -232,4 +232,4 @@ app.post('/api/offerte', async (req, res) => {
 // 404
 app.use((req, res) => res.status(404).render('404', { page: '404' }));
 
-app.listen(PORT, () => console.log(`CreditlineDakkapellen.nl draait op poort ${PORT}`));
+app.listen(PORT, () => console.log(`MaatwerkDakkapel draait op poort ${PORT}`));

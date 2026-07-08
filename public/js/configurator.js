@@ -1,5 +1,5 @@
 // ============================================================
-// CreditlineDakkapellen.nl — configurator.js
+// MaatwerkDakkapel — configurator.js
 // Vooraanzicht dakkapel (zonder woning) · tot 8 m
 // Per vak instelbaar · aparte kleuren kozijn / draaiende delen / boeidelen
 // Kleurenpalet: Drutex decorfolies (bestelkozijnenopmaat.nl)

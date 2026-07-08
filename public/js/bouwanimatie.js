@@ -1,4 +1,4 @@
-// CreditlineDakkapellen.nl — bouwanimatie (ter plaatse gebouwd)
+// MaatwerkDakkapel — bouwanimatie (ter plaatse gebouwd)
 (function () {
   'use strict';
   const svgEl = document.getElementById('buildAnim');

@@ -1,4 +1,4 @@
-// CreditlineDakkapellen.nl — main.js
+// MaatwerkDakkapel — main.js
 (function () {
   'use strict';
   // Mobiel menu
