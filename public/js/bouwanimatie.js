@@ -1,24 +1,26 @@
-// MaatwerkDakkapel — bouwanimatie (ter plaatse gebouwd)
+// MaatwerkDakkapel — bouwanimatie (prefab: gebouwd in de werkplaats, in één dag geplaatst)
 (function () {
   'use strict';
   const svgEl = document.getElementById('buildAnim');
   if (!svgEl) return;
   const caption = document.getElementById('animCaption');
   const dotsEl = document.getElementById('animDots');
+  const unitEl = svgEl.querySelector('.phUnit');
 
-  // fase → zichtbare groepen
+  // fase → zichtbare groepen + positie van het prefab-element (ground | air | placed)
   const PHASES = [
-    { caption: 'Uw woning — nog zonder dakkapel',                      on: [] },
-    { caption: 'Dag 1 · Dakpannen verwijderen en opening maken',       on: ['ph1', 'phTegels', 'phTools'] },
-    { caption: 'Constructie ter plaatse opbouwen — balken en stijlen', on: ['ph1', 'phTegels', 'ph2', 'phTools'] },
-    { caption: 'Zijwangen, isolatie en kozijnen plaatsen',             on: ['ph1', 'phTegels', 'ph2', 'ph3', 'phTools'] },
-    { caption: 'Bitumen dak, boeidelen en loodwerk afwerken',          on: ['ph1', 'phTegels', 'ph2', 'ph3', 'ph4', 'phTools'] },
-    { caption: 'Klaar — uw dakkapel, ter plaatse gebouwd',             on: ['ph1', 'ph2', 'ph3', 'ph4', 'ph5'] }
+    { caption: 'Uw woning — nog zonder dakkapel',                                   on: [], unit: 'ground' },
+    { caption: 'In onze werkplaats gebouwd — compleet met kozijnen, glas, isolatie en dak', on: ['phUnit', 'phTrailer'], unit: 'ground' },
+    { caption: 'Plaatsingsdag · dakpannen eraf en de opening maken',                on: ['ph1', 'phTegels', 'phKraan', 'phUnit', 'phTrailer'], unit: 'ground' },
+    { caption: 'De dakkapel wordt in één geheel ingehesen',                         on: ['ph1', 'phTegels', 'phKraan', 'phUnit', 'phCableAir'], unit: 'air', hold: 3000 },
+    { caption: 'Op zijn plek — direct wind- en waterdicht',                         on: ['ph1', 'phKraan', 'phUnit', 'phCablePlaced'], unit: 'placed', hold: 2800 },
+    { caption: 'Loodwerk en dakpannen aansluiten, laatste afwerking',               on: ['ph1', 'phUnit', 'phLood'], unit: 'placed' },
+    { caption: 'Klaar — in één dag geplaatst',                                      on: ['ph1', 'phUnit', 'phLood', 'ph5'], unit: 'placed', hold: 3600 }
   ];
-  const HOLD = 2200; // ms per fase
+  const HOLD = 2200; // ms per fase (standaard)
 
   // dots
-  PHASES.forEach((_, i) => {
+  PHASES.forEach(() => {
     const d = document.createElement('span');
     d.className = 'anim-dot';
     dotsEl.appendChild(d);
@@ -34,14 +36,17 @@
       const key = Array.from(g.classList).find(c => c.startsWith('ph') && c !== 'ph');
       g.classList.toggle('on', active.has(key));
     });
+    if (unitEl && PHASES[i].unit) {
+      unitEl.classList.remove('pos-ground', 'pos-air', 'pos-placed');
+      unitEl.classList.add('pos-' + PHASES[i].unit);
+    }
     caption.textContent = PHASES[i].caption;
     dots.forEach((d, j) => d.classList.toggle('active', j === i));
   }
 
   function tick() {
     show((idx + 1) % PHASES.length);
-    const pause = idx === PHASES.length - 1 ? HOLD + 1400 : HOLD; // extra pauze op eindbeeld
-    timer = setTimeout(tick, pause);
+    timer = setTimeout(tick, PHASES[idx].hold || HOLD);
   }
 
   function start() {

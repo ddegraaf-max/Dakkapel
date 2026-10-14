@@ -47,12 +47,14 @@
       { mode: 'dk-rechts', rooster: false },
       { mode: 'dk-links', rooster: false }
     ],  // per vak: mode (vast | dk-links | dk-rechts) + ventilatierooster
-    options: []
+    options: [],
+    adres: null,                // { adres, postcode, plaats, pandId, bouwjaar } — uit stap 00
+    dak: null                   // gekozen dakvlak uit 3D BAG (hellingshoek, goothoogte, dakbreedte, …)
   };
 
   // ---------- Prijslogica (spiegelt server; server is leidend) ----------
   const PRICING = {
-    basePrice: 7500,            // 2,50 m breed × 1,50 m hoog, incl. BTW, lift en container
+    basePrice: 7500,            // 2,50 m breed × 1,50 m hoog, incl. BTW, kraan en container
     baseWidth: 250,
     baseHeight: 150,
     pricePerCm: 10,             // €1.000,- per extra meter breedte, incl. BTW
@@ -380,6 +382,216 @@
         ? '+ meerprijs ' + mp.map(o => NAMEN[o] || o).join(' & ') + ' (in offerte)'
         : '';
     }
+    updateDakInfo();
+  }
+
+  // ---------- Stap 00: adres → dakgegevens (PDOK Locatieserver + 3D BAG) ----------
+  const adresInput = document.getElementById('adresInput');
+  const adresSuggest = document.getElementById('adresSuggest');
+  const adresZoekBtn = document.getElementById('adresZoekBtn');
+  const dakStatus = document.getElementById('dakStatus');
+  const dakResult = document.getElementById('dakResult');
+  const dakPandEl = document.getElementById('dakPand');
+  const dakvlakList = document.getElementById('dakvlakList');
+  const dakDoorsnede = document.getElementById('dakDoorsnede');
+  const previewDak = document.getElementById('previewDak');
+  const widthWarn = document.getElementById('widthWarn');
+  let gekozenAdresId = null, suggestTimer = null, suggestItems = [], suggestIdx = -1, dakvlakken = [];
+
+  const fmtMeters = m => (typeof m === 'number' ? m.toFixed(2).replace('.', ',') + ' m' : '—');
+  const fmtGraden = g => (typeof g === 'number' ? String(g).replace('.', ',') + '°' : '—');
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  function setDakStatus(msg, cls) {
+    if (!dakStatus) return;
+    dakStatus.className = 'form-status' + (cls ? ' ' + cls : '');
+    dakStatus.textContent = msg || '';
+  }
+  function verbergSuggesties() {
+    if (adresSuggest) { adresSuggest.hidden = true; adresSuggest.innerHTML = ''; }
+    suggestItems = []; suggestIdx = -1;
+  }
+  function toonSuggesties(items) {
+    suggestItems = items; suggestIdx = -1;
+    adresSuggest.innerHTML = '';
+    if (!items.length) { adresSuggest.hidden = true; return; }
+    items.forEach((it, i) => {
+      const li = document.createElement('li');
+      li.textContent = it.adres;
+      li.addEventListener('mousedown', e => { e.preventDefault(); kiesSuggestie(i); });
+      adresSuggest.appendChild(li);
+    });
+    adresSuggest.hidden = false;
+  }
+  function kiesSuggestie(i) {
+    const it = suggestItems[i];
+    if (!it) return;
+    adresInput.value = it.adres;
+    gekozenAdresId = it.id;
+    verbergSuggesties();
+    haalDakdata();
+  }
+  async function laadSuggesties() {
+    const q = adresInput.value.trim();
+    if (q.length < 3) { verbergSuggesties(); return; }
+    try {
+      const res = await fetch('/api/adres/suggest?q=' + encodeURIComponent(q));
+      const data = await res.json();
+      if (data.ok && adresInput.value.trim() === q) toonSuggesties(data.items || []);
+    } catch (e) { /* stil — zoeken via de knop blijft werken */ }
+  }
+  async function haalDakdata() {
+    const q = adresInput.value.trim();
+    if (!q) { setDakStatus('Vul eerst uw adres in.', 'err'); return; }
+    verbergSuggesties();
+    setDakStatus('Dakgegevens ophalen uit het 3D-gebouwmodel…', 'busy');
+    adresZoekBtn.disabled = true;
+    try {
+      const url = gekozenAdresId
+        ? '/api/dakdata?id=' + encodeURIComponent(gekozenAdresId)
+        : '/api/dakdata?q=' + encodeURIComponent(q);
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'Geen gegevens gevonden voor dit adres.');
+      toonDakdata(data);
+    } catch (e) {
+      state.adres = null; state.dak = null; dakvlakken = [];
+      dakResult.hidden = true;
+      setDakStatus((e && e.message) || 'Dakgegevens konden niet worden opgehaald. U kunt de configurator gewoon verder gebruiken.', 'err');
+      update();
+    } finally {
+      adresZoekBtn.disabled = false;
+    }
+  }
+  function toonDakdata(data) {
+    const p = data.pand || {};
+    const a = data.adres || {};
+    state.adres = { adres: a.adres, postcode: a.postcode, plaats: a.plaats, pandId: p.id, bouwjaar: p.bouwjaar };
+    const pc = document.getElementById('fPostcode');
+    if (pc && !pc.value && a.postcode) pc.value = String(a.postcode).replace(/^(\d{4})\s?([A-Za-z]{2})$/, '$1 $2').toUpperCase();
+    dakvlakken = data.dakvlakken || [];
+    const DAKTYPE = { slanted: 'schuin dak', horizontal: 'plat dak', 'multiple horizontal': 'meerdere platte dakdelen' };
+    dakPandEl.innerHTML = `<b>${esc(a.adres)}</b>`
+      + (p.bouwjaar ? ` · bouwjaar ${esc(p.bouwjaar)}` : '')
+      + ` · ${DAKTYPE[p.dakType] || esc(p.dakType || 'daktype onbekend')}`
+      + (typeof p.nokhoogte === 'number' ? ` · nok ${fmtMeters(p.nokhoogte)} boven maaiveld` : '')
+      + (p.betrouwbaar === false ? ' · <span style="color:var(--accent-deep)">beperkte hoogtedata</span>' : '');
+    dakvlakList.innerHTML = '';
+    if (!dakvlakken.length) {
+      setDakStatus(data.opmerking || 'Geen schuin dakvlak gevonden voor dit adres.', 'err');
+      dakResult.hidden = false;
+      dakDoorsnede.hidden = true;
+      state.dak = null;
+      update();
+      return;
+    }
+    dakvlakken.forEach((v, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'dakvlak';
+      b.innerHTML = `<div class="dv-head"><span>Dakvlak ${v.nr} · ${esc(v.richtingLabel)}</span><span class="dv-badge${v.geschikt ? '' : ' warn'}">${v.geschikt ? 'geschikt' : 'let op'}</span></div>
+        <div class="dv-specs">
+          <span>Helling <b>${fmtGraden(v.hellingshoek)}</b></span><span>Goothoogte <b>${fmtMeters(v.goothoogte)}</b></span>
+          <span>Dakbreedte <b>${fmtMeters(v.dakbreedte)}</b></span><span>Nokhoogte <b>${fmtMeters(v.nokhoogte)}</b></span>
+        </div>`;
+      b.addEventListener('click', () => kiesDakvlak(i));
+      dakvlakList.appendChild(b);
+    });
+    const n = dakvlakken.length;
+    setDakStatus(`Gevonden: ${n} schuin${n === 1 ? '' : 'e'} dakvlak${n === 1 ? '' : 'ken'}. Kies hieronder het dakvlak voor uw dakkapel.`, 'ok');
+    dakResult.hidden = false;
+    const eerste = dakvlakken.findIndex(v => v.geschikt);
+    kiesDakvlak(eerste >= 0 ? eerste : 0);
+  }
+  function kiesDakvlak(i) {
+    const v = dakvlakken[i];
+    if (!v) return;
+    state.dak = Object.assign({}, v);
+    dakvlakList.querySelectorAll('.dakvlak').forEach((el, j) => el.classList.toggle('selected', j === i));
+    update();
+  }
+
+  // zij-aanzicht op schaal: dakhelling met de dakkapel erop (hoogte uit de configurator)
+  function tekenDoorsnede(v) {
+    if (!dakDoorsnede) return;
+    if (!v || typeof v.hellingshoek !== 'number' || typeof v.goothoogte !== 'number' || v.hellingshoek < 3) { dakDoorsnede.hidden = true; return; }
+    const W = 360, Hpx = 210, y0 = 190, xWall = 70;
+    const rad = v.hellingshoek * Math.PI / 180;
+    const L = v.daklengteSchuin || ((v.nokhoogte - v.goothoogte) / Math.sin(rad));
+    const run = L * Math.cos(rad), rise = L * Math.sin(rad);
+    const nok = v.goothoogte + rise;
+    const s = Math.min(150 / Math.max(nok, 4), 240 / Math.max(run, 2));
+    const ex = xWall, ey = y0 - v.goothoogte * s;              // dakvoet
+    const nx = ex + run * s, ny = ey - rise * s;                // nok
+    const a = 0.75, H = state.height / 100;                     // onderkant dakkapel 0,75 m schuin boven de dakvoet
+    const sTop = a + H / Math.sin(rad);
+    const P0 = [ex + a * Math.cos(rad) * s, ey - a * Math.sin(rad) * s];
+    const P1 = [P0[0], P0[1] - H * s];
+    const P2 = [ex + sTop * Math.cos(rad) * s, ey - sTop * Math.sin(rad) * s];
+    const past = sTop <= L - 0.5;
+    const col = past ? '#2e7d4f' : '#c4502e';
+    const font = 'font-family="Instrument Sans, sans-serif" font-size="11" font-weight="600"';
+    const ext = Math.min(run, 2.5) * s;
+    let d = `<svg viewBox="0 0 ${W} ${Hpx}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Doorsnede van het dakvlak met de dakkapel">`;
+    d += `<line x1="10" y1="${y0}" x2="${W - 10}" y2="${y0}" stroke="#7d848b" stroke-width="1.5"/>`;
+    d += `<rect x="${ex - 46}" y="${ey}" width="46" height="${y0 - ey}" fill="#e9e2d4" stroke="#22272b" stroke-width="1.5"/>`;
+    d += `<line x1="${nx}" y1="${ny}" x2="${Math.min(W - 12, nx + ext)}" y2="${ny + ext * Math.tan(rad)}" stroke="#5b4038" stroke-width="5" stroke-linecap="round" opacity=".4"/>`;
+    d += `<line x1="${ex}" y1="${ey}" x2="${nx}" y2="${ny}" stroke="#5b4038" stroke-width="5" stroke-linecap="round"/>`;
+    d += `<polygon points="${P0[0]},${P0[1]} ${P1[0]},${P1[1]} ${P2[0]},${P2[1]}" fill="${past ? 'rgba(46,125,79,.18)' : 'rgba(196,80,46,.18)'}" stroke="${col}" stroke-width="2.5" stroke-linejoin="round"/>`;
+    d += `<rect x="${P1[0] + 2}" y="${P1[1] + 4}" width="${Math.max(6, (P2[0] - P1[0]) * 0.5)}" height="${Math.max(6, (P0[1] - P1[1]) - 10)}" fill="#bcd7e8" stroke="${col}" stroke-width="1"/>`;
+    d += `<text x="${ex + 28}" y="${ey - 6}" ${font} fill="#c4502e">${fmtGraden(v.hellingshoek)}</text>`;
+    d += `<text x="${ex - 44}" y="${(ey + y0) / 2 + 4}" ${font} fill="#4a5158">goot ${fmtMeters(v.goothoogte)}</text>`;
+    d += `<text x="${Math.min(W - 80, nx + 6)}" y="${ny - 6}" ${font} fill="#4a5158">nok ${fmtMeters(nok)}</text>`;
+    d += `<text x="${P1[0] + 4}" y="${P1[1] - 6}" ${font} fill="${col}">dakkapel ${fmtMeters(H)}${past ? '' : ' — te hoog'}</text>`;
+    d += '</svg>';
+    dakDoorsnede.innerHTML = d;
+    dakDoorsnede.hidden = false;
+  }
+
+  function updateDakInfo() {
+    const v = state.dak;
+    tekenDoorsnede(v);
+    if (!previewDak) return;
+    if (!v) { previewDak.hidden = true; if (widthWarn) widthWarn.hidden = true; return; }
+    previewDak.innerHTML = `<b>Uw dak</b> (${esc(v.richtingLabel)}): helling <b>${fmtGraden(v.hellingshoek)}</b> · goothoogte <b>${fmtMeters(v.goothoogte)}</b> · dakbreedte <b>${fmtMeters(v.dakbreedte)}</b> · vergunningsvrij tot ca. <b>${fmtMeters(v.maxBreedteVergunningsvrij)}</b> breed`;
+    previewDak.hidden = false;
+    if (widthWarn) {
+      const w = state.width / 100, h = state.height / 100;
+      const msgs = [];
+      if (typeof v.maxBreedteVergunningsvrij === 'number' && w > v.maxBreedteVergunningsvrij + 0.005) {
+        msgs.push(`Breder dan ca. ${fmtMeters(v.maxBreedteVergunningsvrij)} past op dit dakvlak niet vergunningsvrij (0,5 m vrij van de dakranden).`);
+      }
+      if (typeof v.maxHoogteVergunningsvrij === 'number' && h > v.maxHoogteVergunningsvrij + 0.005) {
+        msgs.push(`Een hoogte van ${fmtMeters(h)} past op dit dakvlak niet vergunningsvrij (bovenkant minimaal 0,5 m onder de nok) — max. ca. ${fmtMeters(v.maxHoogteVergunningsvrij)}.`);
+      }
+      if (v.hellingshoek < 30) {
+        msgs.push('De dakhelling is minder dan 30°; dan is een dakkapel vaak lastiger te plaatsen. Wij beoordelen dit bij het inmeten.');
+      }
+      widthWarn.textContent = msgs.join(' ');
+      widthWarn.hidden = !msgs.length;
+    }
+  }
+
+  if (adresInput && adresSuggest && adresZoekBtn) {
+    adresInput.addEventListener('input', () => {
+      gekozenAdresId = null;
+      clearTimeout(suggestTimer);
+      suggestTimer = setTimeout(laadSuggesties, 250);
+    });
+    adresInput.addEventListener('keydown', e => {
+      if (adresSuggest.hidden || !suggestItems.length) {
+        if (e.key === 'Enter') { e.preventDefault(); haalDakdata(); }
+        return;
+      }
+      if (e.key === 'ArrowDown') { e.preventDefault(); suggestIdx = (suggestIdx + 1) % suggestItems.length; }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); suggestIdx = (suggestIdx - 1 + suggestItems.length) % suggestItems.length; }
+      else if (e.key === 'Enter') { e.preventDefault(); kiesSuggestie(suggestIdx >= 0 ? suggestIdx : 0); return; }
+      else if (e.key === 'Escape') { verbergSuggesties(); return; }
+      else return;
+      adresSuggest.querySelectorAll('li').forEach((li, i) => li.classList.toggle('active', i === suggestIdx));
+    });
+    adresInput.addEventListener('blur', () => setTimeout(verbergSuggesties, 150));
+    adresZoekBtn.addEventListener('click', haalDakdata);
   }
 
   // ---------- Events ----------

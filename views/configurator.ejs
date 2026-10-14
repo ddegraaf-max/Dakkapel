@@ -4,7 +4,7 @@
   <div class="container">
     <span class="kicker">Configurator</span>
     <h1>Stel uw dakkapel samen.</h1>
-    <p>Kies type, breedte tot 8 meter, de indeling per vak en aparte kleuren voor kozijn, draaiende delen en boeidelen — uit het volledige Drutex-kleurenpalet. De tekening en prijsindicatie rekenen live mee.</p>
+    <p>Vul uw adres in voor de maten van uw dak, kies type, breedte tot 8 meter, de indeling per vak en aparte kleuren voor kozijn, draaiende delen en boeidelen — uit het volledige Drutex-kleurenpalet. De tekening en prijsindicatie rekenen live mee.</p>
   </div>
 </section>
 
@@ -12,6 +12,24 @@
 
   <!-- Stappen -->
   <div class="config-steps">
+
+    <div class="config-block" id="woning">
+      <h3><span class="num">00</span> Uw woning <span class="tag-new">Nieuw</span></h3>
+      <p class="form-note" style="margin:0 0 14px">Vul uw adres in. Wij halen dan automatisch de <strong>hellingshoek, goothoogte en dakbreedte</strong> van uw dak op uit het landelijke 3D-gebouwmodel (3D BAG) en vullen ze alvast in — zo ziet u direct of uw wensen passen en wat vergunningsvrij kan. Overslaan mag ook.</p>
+      <div class="adres-zoek">
+        <input type="text" id="adresInput" placeholder="Straat huisnummer, plaats — bijv. Torenlaan 5A Bussum" autocomplete="off" aria-label="Adres van uw woning">
+        <button type="button" class="btn btn-dark" id="adresZoekBtn">Dakgegevens ophalen</button>
+        <ul id="adresSuggest" class="adres-suggest" hidden></ul>
+      </div>
+      <div class="form-status" id="dakStatus"></div>
+      <div id="dakResult" hidden>
+        <p class="dak-pand" id="dakPand"></p>
+        <p class="form-note" style="margin:0 0 10px">Kies het dakvlak waar de dakkapel op komt — de achterzijde is meestal vergunningsvrij:</p>
+        <div id="dakvlakList" class="dakvlak-list"></div>
+        <div class="dak-doorsnede" id="dakDoorsnede" hidden></div>
+        <p class="photo-credit" style="margin-top:12px">Indicatieve waarden op basis van <a href="https://docs.3dbag.nl/en/copyright" target="_blank" rel="noopener" style="text-decoration:underline">© 3DBAG by tudelft3d and 3DGI</a> (CC BY 4.0) en AHN-hoogtedata. Bij het inmeten controleren wij alle maten.</p>
+      </div>
+    </div>
 
     <div class="config-block">
       <h3><span class="num">01</span> Type dakkapel</h3>
@@ -32,6 +50,7 @@
         <div class="slider-value" id="widthValue">2,50 m</div>
       </div>
       <p class="form-note">Van 2,50 tot 8,00 meter breed — opslag € 1.000,- per extra meter, inclusief BTW. Onze adviseur controleert bij het inmeten de beschikbare breedte van uw dakvlak.</p>
+      <div class="slider-warn" id="widthWarn" hidden></div>
     </div>
 
     <div class="config-block">
@@ -181,9 +200,10 @@
       <div class="preview-price">
         <div class="p-label">Prijsindicatie</div>
         <div class="p-value" id="priceValue">€ 7.450</div>
-        <div class="p-sub">casco · incl. BTW, lift en container</div>
+        <div class="p-sub">casco · incl. BTW, kraan en container</div>
       </div>
     </div>
+    <div class="preview-dak" id="previewDak" hidden></div>
   </aside>
 
 </div>

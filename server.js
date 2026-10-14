@@ -4,10 +4,12 @@
 // ============================================================
 const express = require('express');
 const path = require('path');
+const dakdata = require('./lib/dakdata');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.set('trust proxy', 1); // Railway zit achter een proxy: echte client-IP voor de rate-limiter
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -16,7 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // ---------- Prijslogica (indicatief, incl. BTW & montage) ----------
 const PRICING = {
-  basePrice: 7500,          // 2,50 m breed × 1,50 m hoog, incl. BTW, lift en container
+  basePrice: 7500,          // 2,50 m breed × 1,50 m hoog, incl. BTW, kraan en container
   baseWidth: 250,           // cm
   baseHeight: 150,          // cm
   pricePerCm: 10,           // €1.000,- opslag per extra meter breedte, incl. BTW
@@ -98,7 +100,7 @@ const MODELS = [
     name: 'Dakkapel Basic',
     subtitle: 'Kunststof · plat dak',
     price: 7500,
-    desc: 'Onze instapper met alles wat een goede dakkapel nodig heeft: volledig geïsoleerd, bitumen dakbedekking, kunststof rabatdelen en HR++ draaikiepramen. Prijs incl. BTW, lift en container.',
+    desc: 'Onze instapper met alles wat een goede dakkapel nodig heeft: volledig geïsoleerd, bitumen dakbedekking, kunststof rabatdelen en HR++ draaikiepramen. Compleet gebouwd in onze werkplaats. Prijs incl. BTW, kraan en container.',
     colors: ['wit', 'creme'],
     type: 'plat', material: 'kunststof'
   },
@@ -151,6 +153,43 @@ app.post('/api/prijs', (req, res) => {
   }
 });
 
+// ---------- Adres → dakgegevens (PDOK Locatieserver + 3D BAG) ----------
+// Eenvoudige rate-limiter per IP, zodat de externe (gratis) diensten niet overvraagd worden.
+const rateHits = new Map();
+function rateLimit(max, windowMs) {
+  return (req, res, next) => {
+    const ip = req.ip || (req.socket && req.socket.remoteAddress) || '?';
+    const now = Date.now();
+    let h = rateHits.get(ip);
+    if (!h || h.reset < now) { h = { n: 0, reset: now + windowMs }; rateHits.set(ip, h); }
+    if (++h.n > max) return res.status(429).json({ ok: false, error: 'Te veel aanvragen. Probeer het over een minuut opnieuw.' });
+    if (rateHits.size > 5000) for (const [k, v] of rateHits) if (v.reset < now) rateHits.delete(k);
+    next();
+  };
+}
+
+// Autocomplete adressen
+app.get('/api/adres/suggest', rateLimit(120, 60 * 1000), async (req, res) => {
+  try {
+    res.json({ ok: true, items: await dakdata.suggest(req.query.q) });
+  } catch (e) {
+    res.status(502).json({ ok: false, error: 'Adresservice tijdelijk niet bereikbaar.' });
+  }
+});
+
+// Dakgegevens (hellingshoek, goothoogte, dakbreedte per dakvlak) voor een adres
+app.get('/api/dakdata', rateLimit(30, 60 * 1000), async (req, res) => {
+  const { id, q } = req.query;
+  if (!id && !q) return res.status(400).json({ ok: false, error: 'Geef een adres op.' });
+  try {
+    const r = await dakdata.dakdataVoorAdres({ id, q });
+    res.status(r.ok ? 200 : 404).json(r);
+  } catch (e) {
+    console.error('dakdata fout:', e && e.message);
+    res.status(502).json({ ok: false, error: 'Dakgegevens zijn tijdelijk niet beschikbaar. U kunt de configurator gewoon verder gebruiken.' });
+  }
+});
+
 // Offerte-aanvraag → e-mail via Resend
 app.post('/api/offerte', async (req, res) => {
   const { name, email, phone, postcode, message, config } = req.body || {};
@@ -177,8 +216,27 @@ app.post('/api/offerte', async (req, res) => {
     : '—';
   const kleur = id => (PRICING.colors[id] ? PRICING.colors[id].label : (id || '—'));
   const SIDE_LABELS = { 'kunststof-rabat': 'Kunststof rabatdelen', 'hout-rabat': 'Houten rabatdelen', 'zink': 'Zinklook', 'plaat': 'Vlak plaatmateriaal' };
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const num = (v, d = 2) => (typeof v === 'number' && isFinite(v)) ? v.toFixed(d).replace('.', ',') : '—';
+
+  // Dakgegevens uit 3D BAG (door de klant gekozen dakvlak) + adres
+  const adres = config && config.adres && typeof config.adres === 'object' ? config.adres : null;
+  const dak = config && config.dak && typeof config.dak === 'object' ? config.dak : null;
+  const adresRow = adres && adres.adres
+    ? `<tr><td style="padding:6px 14px 6px 0;color:#777">Adres woning</td><td><strong>${esc(adres.adres)}</strong>${adres.pandId ? `<br><span style="color:#777;font-size:12px">BAG-pand ${esc(adres.pandId)}${adres.bouwjaar ? ' · bouwjaar ' + esc(adres.bouwjaar) : ''}</span>` : ''}</td></tr>`
+    : '';
+  const dakRow = dak
+    ? `<tr><td style="padding:6px 14px 6px 0;color:#777;vertical-align:top">Dakvlak (3D BAG)</td><td>
+         <strong>Dakvlak op het ${esc(dak.richtingLabel || dak.richting)} · hellingshoek ${num(dak.hellingshoek, 1)}°</strong><br>
+         Goothoogte ${num(dak.goothoogte)} m · nokhoogte ${num(dak.nokhoogte)} m · dakbreedte ${num(dak.dakbreedte)} m · schuine daklengte ${num(dak.daklengteSchuin)} m<br>
+         <span style="color:#777;font-size:12px">Vergunningsvrij indicatief: max. ${num(dak.maxBreedteVergunningsvrij)} m breed, max. ${num(dak.maxHoogteVergunningsvrij)} m hoog · bron 3D BAG (CC BY 4.0), controleren bij inmeten</span>
+       </td></tr>`
+    : '';
+
   const summary = config ? `
     <table style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px">
+      ${adresRow}
+      ${dakRow}
       <tr><td style="padding:6px 14px 6px 0;color:#777">Type</td><td><strong>${config.type === 'aangekapt' ? 'Aangekapte dakkapel (schuin dak)' : 'Dakkapel met plat dak'}</strong></td></tr>
       <tr><td style="padding:6px 14px 6px 0;color:#777">Breedte</td><td><strong>${(config.width / 100).toFixed(2).replace('.', ',')} m</strong></td></tr>
       <tr><td style="padding:6px 14px 6px 0;color:#777">Hoogte</td><td><strong>${config.height ? (config.height / 100).toFixed(2).replace('.', ',') + ' m' : '1,75 m (standaard)'}</strong></td></tr>
@@ -197,10 +255,10 @@ app.post('/api/offerte', async (req, res) => {
   const html = `
     <div style="font-family:Arial,sans-serif;max-width:640px">
       <h2 style="color:#22272b">Nieuwe offerte-aanvraag — MaatwerkDakkapel</h2>
-      <p><strong>Naam:</strong> ${name}<br>
-         <strong>E-mail:</strong> ${email}<br>
-         <strong>Telefoon:</strong> ${phone || '—'}<br>
-         <strong>Postcode:</strong> ${postcode || '—'}</p>
+      <p><strong>Naam:</strong> ${esc(name)}<br>
+         <strong>E-mail:</strong> ${esc(email)}<br>
+         <strong>Telefoon:</strong> ${esc(phone || '—')}<br>
+         <strong>Postcode:</strong> ${esc(postcode || '—')}</p>
       <h3 style="color:#22272b">Configuratie</h3>
       ${summary}
       ${message ? `<h3 style="color:#22272b">Opmerkingen</h3><p>${String(message).replace(/</g, '&lt;')}</p>` : ''}
